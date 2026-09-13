@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { ArrowRight, LockKeyhole } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
+
 import fundezerLogo from "@/assets/fundezer-logo.png.asset.json";
 
 export const Route = createFileRoute("/auth")({
@@ -67,7 +67,11 @@ function AuthPage() {
 
   const google = async () => {
     try {
-      await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: window.location.origin },
+      });
+      if (error) throw error;
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Google sign-in is unavailable");
     }
