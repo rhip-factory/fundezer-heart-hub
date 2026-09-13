@@ -57,7 +57,7 @@ import {
   walletTransactions,
 } from "@/lib/donor-data";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/portal")({
   head: () => ({
     meta: [
       { title: "FundEzer Donor Portal — Your Giving, in motion" },
