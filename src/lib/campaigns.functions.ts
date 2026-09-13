@@ -130,25 +130,35 @@ export const getPublicCampaignUpdates = createServerFn({ method: "GET" })
     const supabase = publicClient();
     let query = supabase
       .from("campaign_updates")
-      .select("id, campaign_id, title, content, published_at, campaigns(public_title, title)")
+      .select("id, campaign_id, title, content, published_at")
       .eq("status", "Published")
       .order("published_at", { ascending: false })
       .limit(30);
     if (data.campaignId) query = query.eq("campaign_id", data.campaignId);
     const { data: rows, error } = await query;
     if (error) throw error;
-    return (rows ?? []).map((row) => {
-      const campaign = row.campaigns as { public_title: string | null; title: string } | null;
-      return {
-        id: row.id,
-        campaignId: row.campaign_id,
-        campaignName: campaign?.public_title || campaign?.title || "Campaign",
-        title: row.title ?? "Campaign update",
-        content: row.content,
-        publishedAt: row.published_at,
-      };
-    });
+    const list = rows ?? [];
+    const campaignIds = [...new Set(list.map((row) => row.campaign_id))];
+    const names = new Map<string, string>();
+    if (campaignIds.length) {
+      const { data: campaigns } = await supabase
+        .from("campaigns")
+        .select("id, public_title, title")
+        .in("id", campaignIds);
+      for (const campaign of campaigns ?? []) {
+        names.set(campaign.id, campaign.public_title || campaign.title);
+      }
+    }
+    return list.map((row) => ({
+      id: row.id,
+      campaignId: row.campaign_id,
+      campaignName: names.get(row.campaign_id) ?? "Campaign",
+      title: row.title ?? "Campaign update",
+      content: row.content,
+      publishedAt: row.published_at,
+    }));
   });
+
 
 export const listActiveCauses = createServerFn({ method: "GET" }).handler(async () => {
   const supabase = publicClient();
